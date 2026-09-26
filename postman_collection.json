@@ -1,0 +1,61 @@
+{
+  "info": {
+    "name": "Live Class Monitor API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [{ "key": "base", "value": "http://localhost:8000" }],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": { "method": "GET", "url": "{{base}}/api/v1/health" }
+    },
+    {
+      "name": "Single Predict (Good Class)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{base}}/api/v1/predict",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"class_size\":35,\"duration_min\":60,\"session_hour\":10,\"day_of_week\":1,\"subject\":\"Math\",\"grade_level\":9,\"teacher_experience_years\":8,\"attendance_pct\":82.5,\"chat_messages\":28,\"polls_answered\":4,\"hand_raises\":9,\"screen_shares\":2,\"avg_response_sec\":4.2,\"camera_on_pct\":65.0,\"mic_on_pct\":30.0,\"network_drops\":1,\"avg_latency_ms\":65.0,\"reconnects\":0,\"platform\":\"Zoom\",\"quiz_completion\":78.0,\"avg_quiz_score\":72.5,\"assignment_submission_pct\":80.0,\"prev_class_score\":73.0,\"streak_good_sessions\":3}"
+        }
+      }
+    },
+    {
+      "name": "Single Predict (Low Engagement)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{base}}/api/v1/predict",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"class_size\":50,\"duration_min\":90,\"session_hour\":21,\"day_of_week\":6,\"subject\":\"History\",\"grade_level\":6,\"teacher_experience_years\":1,\"attendance_pct\":35.0,\"chat_messages\":2,\"polls_answered\":0,\"hand_raises\":0,\"screen_shares\":0,\"avg_response_sec\":45.0,\"camera_on_pct\":5.0,\"mic_on_pct\":2.0,\"network_drops\":8,\"avg_latency_ms\":450.0,\"reconnects\":5,\"platform\":\"Custom\",\"quiz_completion\":10.0,\"avg_quiz_score\":20.0,\"assignment_submission_pct\":15.0,\"prev_class_score\":30.0,\"streak_good_sessions\":0}"
+        }
+      }
+    },
+    {
+      "name": "Batch Predict",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{base}}/api/v1/predict/batch",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"sessions\":[{\"class_size\":35,\"duration_min\":60,\"session_hour\":10,\"day_of_week\":1,\"subject\":\"Math\",\"grade_level\":9,\"teacher_experience_years\":8,\"attendance_pct\":82.5,\"chat_messages\":28,\"polls_answered\":4,\"hand_raises\":9,\"screen_shares\":2,\"avg_response_sec\":4.2,\"camera_on_pct\":65.0,\"mic_on_pct\":30.0,\"network_drops\":1,\"avg_latency_ms\":65.0,\"reconnects\":0,\"platform\":\"Zoom\",\"quiz_completion\":78.0,\"avg_quiz_score\":72.5,\"assignment_submission_pct\":80.0,\"prev_class_score\":73.0,\"streak_good_sessions\":3}]}"
+        }
+      }
+    },
+    {
+      "name": "Stats",
+      "request": { "method": "GET", "url": "{{base}}/api/v1/stats" }
+    },
+    {
+      "name": "Recent Logs",
+      "request": { "method": "GET", "url": "{{base}}/api/v1/logs?n=20" }
+    },
+    {
+      "name": "Model Info",
+      "request": { "method": "GET", "url": "{{base}}/api/v1/model/info" }
+    }
+  ]
+}

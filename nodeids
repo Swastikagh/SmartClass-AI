@@ -1,0 +1,17 @@
+[
+  "tests/test_api.py::TestBatchPredict::test_batch_predict",
+  "tests/test_api.py::TestBatchPredict::test_batch_single",
+  "tests/test_api.py::TestHealth::test_health_ok",
+  "tests/test_api.py::TestHealth::test_root",
+  "tests/test_api.py::TestMonitoring::test_logs_endpoint",
+  "tests/test_api.py::TestMonitoring::test_model_info",
+  "tests/test_api.py::TestMonitoring::test_stats_endpoint",
+  "tests/test_api.py::TestPredict::test_confidence_range",
+  "tests/test_api.py::TestPredict::test_invalid_attendance",
+  "tests/test_api.py::TestPredict::test_latency_under_500ms",
+  "tests/test_api.py::TestPredict::test_low_engagement_detected",
+  "tests/test_api.py::TestPredict::test_missing_optional_fields",
+  "tests/test_api.py::TestPredict::test_predict_returns_200",
+  "tests/test_api.py::TestPredict::test_predict_schema",
+  "tests/test_api.py::TestPredict::test_prediction_label_valid"
+]

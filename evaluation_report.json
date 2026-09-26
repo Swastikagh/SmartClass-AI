@@ -1,0 +1,78 @@
+{
+  "trained_at": "2026-04-18T10:34:24.471196",
+  "best_model": "LogisticRegression",
+  "best_accuracy": 0.92,
+  "target_met": true,
+  "all_results": {
+    "XGBoost": {
+      "accuracy": 0.90375,
+      "f1": 0.903742630295132,
+      "auc": 0.970078125,
+      "confusion_matrix": [
+        [
+          716,
+          84
+        ],
+        [
+          70,
+          730
+        ]
+      ]
+    },
+    "LightGBM": {
+      "accuracy": 0.895,
+      "f1": 0.8949958982772764,
+      "auc": 0.96816875,
+      "confusion_matrix": [
+        [
+          711,
+          89
+        ],
+        [
+          79,
+          721
+        ]
+      ]
+    },
+    "RandomForest": {
+      "accuracy": 0.8675,
+      "f1": 0.8674898546919999,
+      "auc": 0.94581875,
+      "confusion_matrix": [
+        [
+          687,
+          113
+        ],
+        [
+          99,
+          701
+        ]
+      ]
+    },
+    "LogisticRegression": {
+      "accuracy": 0.92,
+      "f1": 0.919999499996875,
+      "auc": 0.97904375,
+      "confusion_matrix": [
+        [
+          734,
+          66
+        ],
+        [
+          62,
+          738
+        ]
+      ]
+    },
+    "Ensemble": {
+      "accuracy": 0.89625,
+      "f1": 0.8962303810564185,
+      "auc": 0.963546875
+    }
+  },
+  "feature_count": 50,
+  "label_map": {
+    "0": "NeedsImprovement",
+    "1": "GoodClass"
+  }
+}

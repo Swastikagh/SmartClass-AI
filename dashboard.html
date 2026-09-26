@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Live Class Quality Monitor — Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+  :root{
+    --bg:#0a0d13;--surface:#111620;--surface2:#181e2c;--border:#1f2a3d;
+    --accent:#3b82f6;--accent2:#06d6a0;--warn:#f59e0b;--danger:#ef4444;
+    --text:#e2e8f0;--muted:#64748b;--green:#22c55e;--purple:#a855f7;
+    --radius:10px;--card-pad:22px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+  .app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+
+  /* ── Sidebar ──────────────────────────────────────────────── */
+  .sidebar{background:var(--surface);border-right:1px solid var(--border);padding:24px 0;display:flex;flex-direction:column}
+  .logo{padding:0 20px 24px;border-bottom:1px solid var(--border);margin-bottom:16px}
+  .logo-icon{width:36px;height:36px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:8px}
+  .logo h2{font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text)}
+  .logo p{font-size:11px;color:var(--muted);margin-top:2px}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;transition:all .2s;font-size:13.5px;color:var(--muted);border-left:2px solid transparent}
+  .nav-item:hover{color:var(--text);background:rgba(59,130,246,.08)}
+  .nav-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(59,130,246,.1)}
+  .nav-icon{font-size:16px;width:20px;text-align:center}
+  .sidebar-footer{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border)}
+  .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+  .dot-green{background:var(--green);box-shadow:0 0 6px var(--green)}
+  .dot-red{background:var(--danger)}
+  .status-text{font-size:12px;color:var(--muted)}
+
+  /* ── Main ─────────────────────────────────────────────────── */
+  .main{display:flex;flex-direction:column;overflow:auto}
+  .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+  .page-title{font-size:18px;font-weight:600}
+  .topbar-right{display:flex;align-items:center;gap:14px}
+  .btn{padding:8px 16px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .2s;font-family:inherit}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-primary:hover{background:#2563eb}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+  .btn-ghost:hover{color:var(--text);border-color:var(--muted)}
+  .badge{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.03em}
+  .badge-green{background:rgba(34,197,94,.15);color:var(--green)}
+  .badge-red{background:rgba(239,68,68,.15);color:var(--danger)}
+  .badge-yellow{background:rgba(245,158,11,.15);color:var(--warn)}
+  .badge-blue{background:rgba(59,130,246,.15);color:var(--accent)}
+
+  /* ── Content ─────────────────────────────────────────────── */
+  .content{padding:28px;flex:1}
+  .section{display:none}
+  .section.active{display:block}
+
+  /* ── Cards ────────────────────────────────────────────────── */
+  .cards-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:var(--card-pad)}
+  .card-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px}
+  .card-value{font-size:28px;font-weight:700;font-family:'DM Mono',monospace;line-height:1}
+  .card-sub{font-size:12px;color:var(--muted);margin-top:6px}
+  .card-accent{border-left:3px solid var(--accent)}
+  .card-green{border-left:3px solid var(--green)}
+  .card-warn{border-left:3px solid var(--warn)}
+  .card-danger{border-left:3px solid var(--danger)}
+
+  /* ── Grid layouts ─────────────────────────────────────────── */
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
+  .three-col{display:grid;grid-template-columns:2fr 1fr 1fr;gap:20px;margin-bottom:24px}
+  .full{margin-bottom:24px}
+
+  /* ── Form ─────────────────────────────────────────────────── */
+  .form-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:var(--card-pad)}
+  .form-title{font-size:15px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+  .form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .form-group{display:flex;flex-direction:column;gap:6px}
+  .form-group label{font-size:12px;font-weight:500;color:var(--muted)}
+  .form-group input,.form-group select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text);font-family:inherit;transition:border .2s;outline:none}
+  .form-group input:focus,.form-group select:focus{border-color:var(--accent)}
+  .form-group select option{background:var(--surface2)}
+  .form-actions{display:flex;gap:10px;margin-top:20px}
+
+  /* ── Result card ──────────────────────────────────────────── */
+  .result-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-top:20px;display:none}
+  .result-card.visible{display:block}
+  .result-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .result-label{font-size:22px;font-weight:700}
+  .result-label.good{color:var(--green)}
+  .result-label.needs{color:var(--danger)}
+  .conf-bar{height:8px;background:var(--border);border-radius:4px;margin:10px 0;overflow:hidden}
+  .conf-fill{height:100%;border-radius:4px;transition:width .6s ease}
+  .conf-fill.good{background:var(--green)}
+  .conf-fill.needs{background:var(--danger)}
+  .signals-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+  .signal-box{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:12px;text-align:center}
+  .signal-val{font-size:18px;font-weight:700;font-family:'DM Mono',monospace}
+  .signal-lbl{font-size:10px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.05em}
+  .recs{margin-top:14px}
+  .rec-item{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--muted)}
+  .rec-item:last-child{border-bottom:none}
+  .risk-badge{padding:5px 12px;border-radius:20px;font-weight:700;font-size:12px}
+  .risk-LOW{background:rgba(34,197,94,.15);color:var(--green)}
+  .risk-MEDIUM{background:rgba(245,158,11,.15);color:var(--warn)}
+  .risk-HIGH{background:rgba(239,68,68,.15);color:var(--danger)}
+
+  /* ── Live log table ───────────────────────────────────────── */
+  .table-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1px solid var(--border)}
+  td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text)}
+  tr:hover td{background:rgba(255,255,255,.02)}
+  .font-mono{font-family:'DM Mono',monospace;font-size:12px}
+
+  /* ── Chart canvas ─────────────────────────────────────────── */
+  .chart-wrap{position:relative;height:200px;width:100%}
+
+  /* ── Accuracy bar ─────────────────────────────────────────── */
+  .accuracy-row{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+  .model-name{font-size:13px;width:160px;flex-shrink:0}
+  .acc-bar-wrap{flex:1;height:12px;background:var(--border);border-radius:4px;overflow:hidden}
+  .acc-bar-fill{height:100%;border-radius:4px;background:var(--accent);transition:width 1s ease}
+  .acc-pct{font-size:12px;font-family:'DM Mono',monospace;color:var(--muted);width:48px;text-align:right}
+
+  /* ── Spinner ──────────────────────────────────────────────── */
+  .spinner{display:none;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+  .spinner.active{display:inline-block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ── Toast ────────────────────────────────────────────────── */
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 18px;font-size:13px;transform:translateY(60px);opacity:0;transition:all .3s;z-index:100}
+  .toast.show{transform:translateY(0);opacity:1}
+  .toast.ok{border-left:3px solid var(--green)}
+  .toast.err{border-left:3px solid var(--danger)}
+
+  /* ── Responsive ───────────────────────────────────────────── */
+  @media(max-width:900px){
+    .app{grid-template-columns:1fr}
+    .sidebar{display:none}
+    .cards-grid{grid-template-columns:repeat(2,1fr)}
+    .form-grid{grid-template-columns:repeat(2,1fr)}
+    .two-col,.three-col{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">🎓</div>
+      <h2>ClassMonitor</h2>
+      <p>AI Quality System</p>
+    </div>
+    <div class="nav-item active" onclick="showSection('dashboard',this)">
+      <span class="nav-icon">📊</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="showSection('predict',this)">
+      <span class="nav-icon">🔮</span> Live Predict
+    </div>
+    <div class="nav-item" onclick="showSection('logs',this)">
+      <span class="nav-icon">📋</span> Prediction Logs
+    </div>
+    <div class="nav-item" onclick="showSection('model',this)">
+      <span class="nav-icon">🧠</span> Model Info
+    </div>
+    <div class="nav-item" onclick="showSection('docs',this)">
+      <span class="nav-icon">📖</span> API Docs
+    </div>
+    <div class="sidebar-footer">
+      <div id="sidebar-status">
+        <span class="status-dot dot-red" id="status-dot"></span>
+        <span class="status-text" id="status-text">Connecting…</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div class="page-title" id="page-title">Dashboard</div>
+      <div class="topbar-right">
+        <div class="spinner" id="global-spinner"></div>
+        <span id="api-url-badge" class="badge badge-blue" style="font-family:DM Mono,monospace;font-size:10px">API</span>
+        <button class="btn btn-ghost" onclick="refreshAll()">↻ Refresh</button>
+        <button class="btn btn-primary" onclick="showSection('predict',document.querySelector('.nav-item:nth-child(3)'))">+ New Prediction</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ── Dashboard ───────────────────────────────────── -->
+      <div class="section active" id="section-dashboard">
+        <div class="cards-grid">
+          <div class="card card-accent">
+            <div class="card-label">Model Accuracy</div>
+            <div class="card-value" id="kpi-acc">—</div>
+            <div class="card-sub">On held-out test set</div>
+          </div>
+          <div class="card card-green">
+            <div class="card-label">Total Predictions</div>
+            <div class="card-value" id="kpi-total">0</div>
+            <div class="card-sub">Since API started</div>
+          </div>
+          <div class="card card-warn">
+            <div class="card-label">Good Class Rate</div>
+            <div class="card-value" id="kpi-good">—</div>
+            <div class="card-sub">% classified as GoodClass</div>
+          </div>
+          <div class="card card-danger">
+            <div class="card-label">Avg Latency</div>
+            <div class="card-value" id="kpi-lat">—</div>
+            <div class="card-sub">Model inference ms</div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <!-- Recent predictions mini-table -->
+          <div class="card" style="grid-column:1/2">
+            <div class="form-title">📈 Recent Predictions</div>
+            <div class="table-wrap" id="dash-recent">
+              <p style="color:var(--muted);font-size:13px">No predictions yet — run a prediction first.</p>
+            </div>
+          </div>
+          <!-- Model summary -->
+          <div class="card">
+            <div class="form-title">🧠 Model Performance</div>
+            <div id="model-acc-bars" style="margin-top:8px">
+              <p style="color:var(--muted);font-size:13px">Loading…</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card full">
+          <div class="form-title">📉 Prediction History (last 20)</div>
+          <div class="chart-wrap"><canvas id="hist-chart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- ── Live Predict ─────────────────────────────────── -->
+      <div class="section" id="section-predict">
+        <div class="form-section">
+          <div class="form-title">🔮 Live Class Session Predictor</div>
+          <div class="form-grid">
+            <div class="form-group"><label>Class Size</label><input id="f-class_size" type="number" value="35" min="1" max="500"/></div>
+            <div class="form-group"><label>Duration (min)</label>
+              <select id="f-duration_min">
+                <option value="30">30 min</option><option value="45">45 min</option>
+                <option value="60" selected>60 min</option><option value="90">90 min</option><option value="120">120 min</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Session Hour (0–23)</label><input id="f-session_hour" type="number" value="10" min="0" max="23"/></div>
+            <div class="form-group"><label>Day of Week (0=Mon)</label><input id="f-day_of_week" type="number" value="1" min="0" max="6"/></div>
+            <div class="form-group"><label>Subject</label>
+              <select id="f-subject">
+                <option>Math</option><option>Science</option><option>English</option>
+                <option>History</option><option>Coding</option><option>Art</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Grade Level</label><input id="f-grade_level" type="number" value="9" min="1" max="12"/></div>
+            <div class="form-group"><label>Teacher Exp. (years)</label><input id="f-teacher_experience_years" type="number" value="8" min="0" max="50"/></div>
+            <div class="form-group"><label>Attendance %</label><input id="f-attendance_pct" type="number" value="82.5" step="0.1" min="0" max="100"/></div>
+            <div class="form-group"><label>Chat Messages</label><input id="f-chat_messages" type="number" value="28"/></div>
+            <div class="form-group"><label>Polls Answered</label><input id="f-polls_answered" type="number" value="4"/></div>
+            <div class="form-group"><label>Hand Raises</label><input id="f-hand_raises" type="number" value="9"/></div>
+            <div class="form-group"><label>Screen Shares</label><input id="f-screen_shares" type="number" value="2"/></div>
+            <div class="form-group"><label>Avg Response (sec)</label><input id="f-avg_response_sec" type="number" value="4.2" step="0.1"/></div>
+            <div class="form-group"><label>Camera On %</label><input id="f-camera_on_pct" type="number" value="65" min="0" max="100"/></div>
+            <div class="form-group"><label>Mic On %</label><input id="f-mic_on_pct" type="number" value="30" min="0" max="100"/></div>
+            <div class="form-group"><label>Network Drops</label><input id="f-network_drops" type="number" value="1"/></div>
+            <div class="form-group"><label>Avg Latency (ms)</label><input id="f-avg_latency_ms" type="number" value="65"/></div>
+            <div class="form-group"><label>Reconnects</label><input id="f-reconnects" type="number" value="0"/></div>
+            <div class="form-group"><label>Platform</label>
+              <select id="f-platform">
+                <option>Zoom</option><option>Teams</option><option>Meet</option><option>Custom</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Quiz Completion %</label><input id="f-quiz_completion" type="number" value="78" min="0" max="100"/></div>
+            <div class="form-group"><label>Avg Quiz Score</label><input id="f-avg_quiz_score" type="number" value="72.5" min="0" max="100"/></div>
+            <div class="form-group"><label>Assignment Sub. %</label><input id="f-assignment_submission_pct" type="number" value="80" min="0" max="100"/></div>
+            <div class="form-group"><label>Prev Class Score</label><input id="f-prev_class_score" type="number" value="73" min="0" max="100"/></div>
+            <div class="form-group"><label>Streak Good Sessions</label><input id="f-streak_good_sessions" type="number" value="3"/></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="runPredict()">🚀 Predict Quality</button>
+            <button class="btn btn-ghost" onclick="fillLowEngagement()">⚠️ Load Low-Engagement</button>
+            <button class="btn btn-ghost" onclick="fillHighEngagement()">✅ Load High-Engagement</button>
+            <div class="spinner" id="pred-spinner"></div>
+          </div>
+        </div>
+
+        <div class="result-card" id="result-card">
+          <div class="result-header">
+            <div>
+              <div class="result-label" id="res-label">—</div>
+              <div style="font-size:13px;color:var(--muted);margin-top:4px" id="res-model">Model: —</div>
+            </div>
+            <div>
+              <span class="risk-badge" id="res-risk">—</span>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--muted)">Confidence</div>
+          <div class="conf-bar"><div class="conf-fill" id="res-conf-bar" style="width:0%"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;font-family:DM Mono,monospace">
+            <span id="res-conf-pct">0%</span>
+            <span id="res-lat">0ms</span>
+          </div>
+          <div class="signals-grid">
+            <div class="signal-box"><div class="signal-val" id="sig-eng">—</div><div class="signal-lbl">Eng. Proxy</div></div>
+            <div class="signal-box"><div class="signal-val" id="sig-part">—</div><div class="signal-lbl">Participation</div></div>
+            <div class="signal-box"><div class="signal-val" id="sig-tech">—</div><div class="signal-lbl">Tech Penalty</div></div>
+            <div class="signal-box"><div class="signal-val" id="sig-quiz">—</div><div class="signal-lbl">Quiz Eff.</div></div>
+          </div>
+          <div class="recs" id="res-recs"></div>
+        </div>
+      </div>
+
+      <!-- ── Prediction Logs ─────────────────────────────── -->
+      <div class="section" id="section-logs">
+        <div class="card full">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <div class="form-title">📋 Prediction Log (last 50)</div>
+            <button class="btn btn-ghost" onclick="loadLogs()">↻ Refresh</button>
+          </div>
+          <div class="table-wrap">
+            <table id="logs-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th><th>Prediction</th><th>Confidence</th>
+                  <th>Risk</th><th>Latency</th><th>Class Size</th><th>Attendance %</th>
+                </tr>
+              </thead>
+              <tbody id="logs-body">
+                <tr><td colspan="7" style="color:var(--muted);text-align:center;padding:24px">No logs yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Model Info ──────────────────────────────────── -->
+      <div class="section" id="section-model">
+        <div class="cards-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="card card-accent">
+            <div class="card-label">Best Model</div>
+            <div class="card-value" id="mi-name" style="font-size:16px;word-break:break-all">—</div>
+          </div>
+          <div class="card card-green">
+            <div class="card-label">Test Accuracy</div>
+            <div class="card-value" id="mi-acc">—</div>
+          </div>
+          <div class="card card-warn">
+            <div class="card-label">Feature Count</div>
+            <div class="card-value" id="mi-feats">—</div>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="form-title">📊 All Model Results</div>
+            <div id="mi-all-models"></div>
+          </div>
+          <div class="card">
+            <div class="form-title">🏷 Label Map</div>
+            <div id="mi-labels" style="font-size:13px;color:var(--muted)"></div>
+            <div class="form-title" style="margin-top:20px">🕐 Trained At</div>
+            <div id="mi-trained" style="font-size:13px;color:var(--muted);font-family:DM Mono,monospace"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── API Docs ────────────────────────────────────── -->
+      <div class="section" id="section-docs">
+        <div class="card full">
+          <div class="form-title">📖 API Reference</div>
+          <div style="font-size:13px;line-height:1.7">
+            <p style="color:var(--muted);margin-bottom:18px">Base URL: <code id="docs-base" style="font-family:DM Mono,monospace;background:var(--surface2);padding:2px 7px;border-radius:4px;color:var(--accent)"></code></p>
+            <div id="endpoints-list"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Config ───────────────────────────────────────────────────────────────
+const API = (window.API_URL || 'http://localhost:8000') + '/api/v1';
+
+document.getElementById('api-url-badge').textContent = API.replace('/api/v1','');
+document.getElementById('docs-base').textContent      = API;
+
+// ── Navigation ────────────────────────────────────────────────────────────
+function showSection(id, el){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('section-'+id).classList.add('active');
+  if(el) el.classList.add('active');
+  const titles = {dashboard:'Dashboard',predict:'Live Predict',logs:'Prediction Logs',model:'Model Info',docs:'API Docs'};
+  document.getElementById('page-title').textContent = titles[id]||id;
+  if(id==='logs') loadLogs();
+  if(id==='model') loadModelInfo();
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────
+function toast(msg,type='ok'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show '+type;
+  setTimeout(()=>t.className='toast',3000);
+}
+
+// ── Spinner ───────────────────────────────────────────────────────────────
+function spin(id,on){ document.getElementById(id).classList[on?'add':'remove']('active') }
+
+// ── Fetch helpers ─────────────────────────────────────────────────────────
+async function apiFetch(path, opts){
+  try{
+    const r = await fetch(API+path, opts);
+    if(!r.ok) throw new Error(await r.text());
+    return await r.json();
+  } catch(e){ throw e; }
+}
+
+// ── Health poll ───────────────────────────────────────────────────────────
+async function pollHealth(){
+  try{
+    const d = await apiFetch('/health');
+    const dot = document.getElementById('status-dot');
+    const txt = document.getElementById('status-text');
+    if(d.status==='ok'){
+      dot.className='status-dot dot-green';
+      txt.textContent = 'API Online';
+      document.getElementById('kpi-acc').textContent = (d.accuracy*100).toFixed(1)+'%';
+    }
+  } catch(e){
+    document.getElementById('status-dot').className='status-dot dot-red';
+    document.getElementById('status-text').textContent='API Offline';
+  }
+}
+
+// ── Dashboard stats ───────────────────────────────────────────────────────
+async function loadStats(){
+  try{
+    const s = await apiFetch('/stats');
+    document.getElementById('kpi-total').textContent = s.total||0;
+    document.getElementById('kpi-good').textContent  = s.total ? s.good_class_pct+'%' : '—';
+    document.getElementById('kpi-lat').textContent   = s.avg_latency_ms ? s.avg_latency_ms+'ms' : '—';
+  } catch(e){}
+}
+
+// ── Dashboard recent logs mini table ─────────────────────────────────────
+async function loadDashRecent(){
+  try{
+    const d = await apiFetch('/logs?n=5');
+    const logs = d.logs||[];
+    if(!logs.length) return;
+    const tbody = logs.map(l=>`
+      <tr>
+        <td>${new Date(l.ts).toLocaleTimeString()}</td>
+        <td><span class="badge ${l.prediction===1?'badge-green':'badge-red'}">${l.label||'—'}</span></td>
+        <td class="font-mono">${((l.confidence||0)*100).toFixed(1)}%</td>
+        <td><span class="badge ${l.risk_level==='HIGH'?'badge-red':l.risk_level==='MEDIUM'?'badge-yellow':'badge-green'}">${l.risk_level||'—'}</span></td>
+      </tr>`).join('');
+    document.getElementById('dash-recent').innerHTML=`
+      <table><thead><tr><th>Time</th><th>Label</th><th>Conf.</th><th>Risk</th></tr></thead>
+      <tbody>${tbody}</tbody></table>`;
+  } catch(e){}
+}
+
+// ── Chart ─────────────────────────────────────────────────────────────────
+async function loadChart(){
+  try{
+    const d = await apiFetch('/logs?n=20');
+    const logs = (d.logs||[]).reverse();
+    const canvas = document.getElementById('hist-chart');
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.parentElement.offsetWidth;
+    canvas.height = 180;
+    const w=canvas.width, h=180;
+    ctx.clearRect(0,0,w,h);
+    if(!logs.length){
+      ctx.fillStyle='#64748b'; ctx.font='13px DM Sans'; ctx.textAlign='center';
+      ctx.fillText('Run predictions to see history',w/2,h/2); return;
+    }
+    const cols=logs.map(l=>l.prediction===1?'#22c55e':'#ef4444');
+    const bw=Math.min(30,(w-40)/logs.length-4), gap=(w-40-bw*logs.length)/(logs.length+1);
+    logs.forEach((l,i)=>{
+      const conf=(l.confidence||0.5), bh=Math.max(20,conf*(h-40));
+      const x=40+gap+(bw+gap)*i, y=h-20-bh;
+      ctx.fillStyle=cols[i]; ctx.beginPath();
+      ctx.roundRect(x,y,bw,bh,3); ctx.fill();
+    });
+    // Y axis
+    ctx.strokeStyle='#1f2a3d'; ctx.lineWidth=1;
+    [0,0.5,1].forEach(v=>{
+      const y=h-20-v*(h-40);
+      ctx.beginPath(); ctx.moveTo(38,y); ctx.lineTo(w,y); ctx.stroke();
+      ctx.fillStyle='#64748b'; ctx.font='10px DM Mono'; ctx.textAlign='right';
+      ctx.fillText((v*100).toFixed(0)+'%',34,y+4);
+    });
+  } catch(e){}
+}
+
+// ── Model accuracy bars ───────────────────────────────────────────────────
+async function loadModelAccBars(){
+  try{
+    const d = await apiFetch('/model/info');
+    const all = d.all_model_results||{};
+    const el  = document.getElementById('model-acc-bars');
+    el.innerHTML = Object.entries(all).map(([name,r])=>`
+      <div class="accuracy-row">
+        <div class="model-name">${name}</div>
+        <div class="acc-bar-wrap"><div class="acc-bar-fill" style="width:${((r.accuracy||0)*100).toFixed(1)}%"></div></div>
+        <div class="acc-pct">${((r.accuracy||0)*100).toFixed(1)}%</div>
+      </div>`).join('');
+  } catch(e){}
+}
+
+// ── Prediction ────────────────────────────────────────────────────────────
+function getFormData(){
+  const f={};
+  const ids=['class_size','duration_min','session_hour','day_of_week','subject','grade_level',
+    'teacher_experience_years','attendance_pct','chat_messages','polls_answered','hand_raises',
+    'screen_shares','avg_response_sec','camera_on_pct','mic_on_pct','network_drops',
+    'avg_latency_ms','reconnects','platform','quiz_completion','avg_quiz_score',
+    'assignment_submission_pct','prev_class_score','streak_good_sessions'];
+  ids.forEach(id=>{
+    const el=document.getElementById('f-'+id);
+    if(!el) return;
+    const v = el.value;
+    if(['subject','platform'].includes(id)) f[id]=v;
+    else if(v===''||v===null) f[id]=null;
+    else f[id]=parseFloat(v)||0;
+  });
+  return f;
+}
+
+async function runPredict(){
+  spin('pred-spinner',true);
+  spin('global-spinner',true);
+  try{
+    const data = getFormData();
+    const r = await apiFetch('/predict',{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)
+    });
+    showResult(r);
+    toast('Prediction complete!','ok');
+    loadStats(); loadDashRecent(); loadChart();
+  } catch(e){ toast('Error: '+e.message,'err'); }
+  spin('pred-spinner',false);
+  spin('global-spinner',false);
+}
+
+function showResult(r){
+  const card = document.getElementById('result-card');
+  card.classList.add('visible');
+  const isGood = r.prediction===1;
+  const label  = document.getElementById('res-label');
+  label.textContent = r.label;
+  label.className   = 'result-label '+(isGood?'good':'needs');
+  document.getElementById('res-model').textContent = 'Model: '+r.model_version;
+  const riskEl = document.getElementById('res-risk');
+  riskEl.textContent   = r.risk_level+' RISK';
+  riskEl.className     = 'risk-badge risk-'+r.risk_level;
+  const conf = r.confidence*100;
+  const bar  = document.getElementById('res-conf-bar');
+  bar.style.width = conf+'%';
+  bar.className   = 'conf-fill '+(isGood?'good':'needs');
+  document.getElementById('res-conf-pct').textContent = conf.toFixed(1)+'%';
+  document.getElementById('res-lat').textContent      = r.latency_ms.toFixed(1)+'ms';
+  const s = r.engagement_signals||{};
+  document.getElementById('sig-eng').textContent  = (s.engagement_proxy||0).toFixed(1);
+  document.getElementById('sig-part').textContent = (s.participation_index||0).toFixed(2);
+  document.getElementById('sig-tech').textContent = (s.tech_penalty||0).toFixed(1);
+  document.getElementById('sig-quiz').textContent = (s.quiz_efficiency||0).toFixed(1);
+  const recs = r.recommendations||[];
+  document.getElementById('res-recs').innerHTML = recs.map(rec=>`
+    <div class="rec-item"><span>${rec}</span></div>`).join('');
+  card.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ── Fill helpers ──────────────────────────────────────────────────────────
+function fillLowEngagement(){
+  const vals={class_size:50,duration_min:90,session_hour:21,day_of_week:6,subject:'History',grade_level:6,
+    teacher_experience_years:1,attendance_pct:35,chat_messages:2,polls_answered:0,hand_raises:0,
+    screen_shares:0,avg_response_sec:45,camera_on_pct:5,mic_on_pct:2,network_drops:8,
+    avg_latency_ms:450,reconnects:5,platform:'Custom',quiz_completion:10,avg_quiz_score:20,
+    assignment_submission_pct:15,prev_class_score:30,streak_good_sessions:0};
+  Object.entries(vals).forEach(([k,v])=>{const el=document.getElementById('f-'+k);if(el)el.value=v;});
+}
+function fillHighEngagement(){
+  const vals={class_size:28,duration_min:60,session_hour:10,day_of_week:2,subject:'Coding',grade_level:10,
+    teacher_experience_years:15,attendance_pct:95,chat_messages:55,polls_answered:7,hand_raises:18,
+    screen_shares:4,avg_response_sec:2.1,camera_on_pct:85,mic_on_pct:55,network_drops:0,
+    avg_latency_ms:35,reconnects:0,platform:'Zoom',quiz_completion:94,avg_quiz_score:88,
+    assignment_submission_pct:96,prev_class_score:91,streak_good_sessions:8};
+  Object.entries(vals).forEach(([k,v])=>{const el=document.getElementById('f-'+k);if(el)el.value=v;});
+}
+
+// ── Logs ──────────────────────────────────────────────────────────────────
+async function loadLogs(){
+  try{
+    const d = await apiFetch('/logs?n=50');
+    const logs = (d.logs||[]).reverse();
+    const tbody = document.getElementById('logs-body');
+    if(!logs.length){
+      tbody.innerHTML='<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:24px">No logs yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = logs.map(l=>`
+      <tr>
+        <td class="font-mono">${new Date(l.ts).toLocaleString()}</td>
+        <td><span class="badge ${l.prediction===1?'badge-green':'badge-red'}">${l.label||'—'}</span></td>
+        <td class="font-mono">${((l.confidence||0)*100).toFixed(1)}%</td>
+        <td><span class="badge ${l.risk_level==='HIGH'?'badge-red':l.risk_level==='MEDIUM'?'badge-yellow':'badge-green'}">${l.risk_level||'—'}</span></td>
+        <td class="font-mono">${(l.latency_ms||0).toFixed(1)}ms</td>
+        <td>${l.input_summary?.class_size||'—'}</td>
+        <td>${l.input_summary?.attendance_pct?.toFixed(1)||'—'}%</td>
+      </tr>`).join('');
+  } catch(e){ toast('Failed to load logs','err'); }
+}
+
+// ── Model Info ────────────────────────────────────────────────────────────
+async function loadModelInfo(){
+  try{
+    const d = await apiFetch('/model/info');
+    document.getElementById('mi-name').textContent  = d.model||'—';
+    document.getElementById('mi-acc').textContent   = ((d.accuracy||0)*100).toFixed(1)+'%';
+    document.getElementById('mi-feats').textContent = d.feature_count||'—';
+    document.getElementById('mi-trained').textContent = d.trained_at ? new Date(d.trained_at).toLocaleString() : '—';
+    const lm = d.label_map||{};
+    document.getElementById('mi-labels').innerHTML  = Object.entries(lm).map(([k,v])=>`
+      <div style="margin-bottom:6px"><code style="font-family:DM Mono,monospace;background:var(--surface2);padding:2px 7px;border-radius:4px">${k}</code> → <strong>${v}</strong></div>`).join('');
+    const all = d.all_model_results||{};
+    document.getElementById('mi-all-models').innerHTML = Object.entries(all).map(([name,r])=>`
+      <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <strong style="font-size:13px">${name}</strong>
+          <span class="badge ${(r.accuracy||0)>=0.91?'badge-green':'badge-yellow'}">${((r.accuracy||0)*100).toFixed(1)}%</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">F1: ${((r.f1||0)*100).toFixed(1)}%   AUC: ${((r.auc||0)*100).toFixed(1)}%</div>
+      </div>`).join('');
+  } catch(e){}
+}
+
+// ── API Docs ──────────────────────────────────────────────────────────────
+const ENDPOINTS=[
+  {method:'GET',path:'/health',desc:'Health check — returns model status, accuracy, uptime'},
+  {method:'POST',path:'/predict',desc:'Single class prediction. Body: ClassInput JSON'},
+  {method:'POST',path:'/predict/batch',desc:'Batch predictions. Body: {sessions: [ClassInput, ...]}'},
+  {method:'POST',path:'/predict/csv',desc:'Upload a CSV file to get predictions for all rows'},
+  {method:'GET',path:'/stats',desc:'Aggregate prediction statistics (totals, rates, latency)'},
+  {method:'GET',path:'/logs',desc:'Recent prediction log. Query: ?n=50'},
+  {method:'GET',path:'/model/info',desc:'Model metadata, accuracy, feature count, label map'},
+];
+document.getElementById('endpoints-list').innerHTML = ENDPOINTS.map(e=>`
+  <div style="margin-bottom:14px;padding:14px;background:var(--surface2);border-radius:7px;border:1px solid var(--border)">
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:6px">
+      <span class="badge ${e.method==='GET'?'badge-green':'badge-blue'}">${e.method}</span>
+      <code style="font-family:DM Mono,monospace;color:var(--text)">${e.path}</code>
+    </div>
+    <div style="font-size:12px;color:var(--muted)">${e.desc}</div>
+  </div>`).join('');
+
+// ── Init ──────────────────────────────────────────────────────────────────
+function refreshAll(){
+  pollHealth(); loadStats(); loadDashRecent(); loadChart(); loadModelAccBars();
+}
+refreshAll();
+setInterval(pollHealth,10000);
+setInterval(()=>{ if(document.getElementById('section-dashboard').classList.contains('active')){ loadStats();loadDashRecent();loadChart(); } },15000);
+</script>
+</body>
+</html>
